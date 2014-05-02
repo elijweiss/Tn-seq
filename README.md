@@ -9,14 +9,14 @@ incorporate input files from multiple Tn-seq runs for comparison.
 
 Software requirements
 ---------------------
-Python - we use version 2.6.6 but any 2.x version above that should work
+Python - we use version 2.6.6 but any 2.x version above that should work.
+
 Read mapping software:
-  BWA - tested with version 0.7.4
-    or
-  Bowtie - tested with version 0.12.7
+BWA (tested with version 0.7.4) or Bowtie (tested with version 0.12.7)
 
 Running the scripts
 ---------------------
+```
 Step 1: mapping (process_map.py)
 Usage: process_map.py [options] firstend_fastq_1 index_fastq_1 secondend_fastq_1 ...
 Options:
@@ -45,12 +45,15 @@ Options:
   -o, --outfile_anno    path to final annotated output file (default: work/AnnotatedHits.txt)
   -p, --outfile_tab     path to final counts tabulated by gene (default: work/HitsPerGene.txt)
   -w, --workingdir      working directory for input and output files (default: work)
+```
 
 Examples
 ---------------------
+```
 python process_map.py --barcodefile barcodes.txt --chastity --demux_read2 --tn_verify_by_index --reffile combined.fna --tn_end AGACAG --workingdir work r1.fq ind.fq r2.fq
 
 python process_annotate_tabulate.py --annofiles CP000086.ptt,CP000085.ptt --reffile combined.fna --workingdir work work/r1_ch_iPass_ACGTGA_sum_norm.txt work/r1_ch_iPass_CTAGTG_sum_norm.txt work/r1_ch_iPass_GATCAC_sum_norm.txt work/r1_ch_iPass_TGCACT_sum_norm.txt
+```
 
 Additional notes
 ---------------------
