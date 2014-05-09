@@ -57,17 +57,10 @@ python process_annotate_tabulate.py --annofiles CP000086.ptt,CP000085.ptt --reff
 
 Additional notes
 ---------------------
-Before running the scripts for the first time, check common.py to make sure paths
-and constants are correct for your environment. For example, you may need to change
-the path to the BWA executable.
+Before running the scripts for the first time, check common.py to make sure paths and constants are correct for your environment. For example, you may need to change the path to the BWA executable.
 
-The comma-separated list of .ptt annotation files should not have spaces between the
-files (only a comma).
+The comma-separated list of .ptt annotation files should not have spaces between the files (only a comma).
 
-If your reference genome contains multiple replicons, combine their fasta files into
-a single fasta before running this software. The order of the sequences should be
-the same as the order of the comma-separated list of .ptt files.
+If your reference genome contains multiple replicons, combine their fasta files into a single fasta before running this software. The order of the sequences should be the same as the order of the comma-separated list of .ptt files.
 
-For best results, the header lines of your combined fasta file should have simple
-names, such as the accession number of the replicon. BWA parses these headers and
-a simple header will be the most compatible.
+For best results, the header lines of your combined fasta file should have simple names, such as the accession number of the replicon. BWA parses these headers and a simple header will be the most compatible.
