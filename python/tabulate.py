@@ -12,6 +12,7 @@ import optparse
 import os.path
 import re
 import collections
+import common
 
 #------------------------------------------------------------------------------
 # constants
@@ -46,44 +47,6 @@ def init_options():
         opts.outfile = parts[0] + OUT_SUFFIX + parts[1]
 
     return opts, args
-
-# Replicon names are in the fasta headers
-def read_replicon_names(fasta):
-    replicons = dict()
-    repl_num = 0
-    with open(fasta, "r") as fh:
-        for line in fh:
-            if line.startswith(">"):
-                repl_long = line[1:-1]
-                repl = repl_long.split(" ", 1)[0]
-                replicons[repl_num] = repl
-                repl_num += 1
-    return replicons
-
-def read_annotations(annofile_list, replicon_list):
-    print "reading annotation file(s)"
-    annotations = dict()
-    for filenum, annofile in enumerate(annofile_list):
-        replicon = replicon_list[filenum]
-        annotations[replicon] = dict()
-        with open(annofile, "r") as fh:
-            count = 0
-            for line in fh:
-                mobj = re.match("^(\d+)\.\.(\d+)", line)
-                if mobj:
-                    startpos = mobj.group(1)
-                    endpos = mobj.group(2)
-                    (loc, strand, length, pid, gene, synonym, code, cog, product) = line.rstrip().split('\t')
-                    annotations[replicon][pid] = dict();
-                    annotations[replicon][pid]['locus_tag'] = synonym
-                    annotations[replicon][pid]['startpos'] = int(startpos)
-                    annotations[replicon][pid]['endpos'] = int(endpos)
-                    annotations[replicon][pid]['strand'] = strand
-                    annotations[replicon][pid]['length'] = length
-                    annotations[replicon][pid]['info'] = '\t'.join([gene, code, cog, product])
-                    count += 1
-    print "read " + str(count) + " annotations for " + str(len(annotations.keys())) + " replicon(s)"
-    return annotations
 
 def read_hits_file(infile):
     hits = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(int)))
@@ -167,7 +130,7 @@ def main():
     opts, args = init_options()
     print "Tabulating " + opts.infile
 
-    all_replicons = read_replicon_names(opts.fasta)
+    all_replicons = common.read_replicon_names(opts.fasta)
 
     # Separate multiple annotation files
     annofile_list = opts.annofiles.split(",")
@@ -176,7 +139,7 @@ def main():
         exit(1)
     print "Using annotation files " + str(annofile_list)
 
-    annotations = read_annotations(annofile_list, all_replicons)
+    annotations = common.read_annotations(annofile_list, all_replicons)
 
     (runs, hits, allhits) = read_hits_file(opts.infile)
 

@@ -70,8 +70,18 @@ def read_barcodes(barcodefile):
             seqlist.append(seq)
     return seqlist
 
+# Check fasta headers: BWA parses headers containing pipes and spaces so we recommend using simpler headers
+def headers_ok(fasta):
+    ok = True
+    replicons = common.read_replicon_names(fasta)
+    for replicon in replicons.values():
+        if "|" in replicon:
+            ok = False
+    return ok
+
 # Run the Tn-seq mapping pipeline
 def process(infiles, opts):
+    scriptpath = os.path.dirname(os.path.abspath(__file__))
     label = os.path.splitext(os.path.basename(infiles[0]))[0]
 
     # Group the input files (read1, index, read2) if using index reads and/or 2nd-end reads
@@ -113,7 +123,7 @@ def process(infiles, opts):
         for (r1_file, i_file, r2_file) in infile_groups:
             fname = common.add_suffix(os.path.basename(r1_file), common.CHASTE_SUFFIX)
             r1_out = os.path.join(opts.workdir, fname)
-            cmd = ["python", "ch_filter.py", "--end1", r1_file, "--outfile_e1", r1_out]
+            cmd = ["python", os.path.join(scriptpath, "ch_filter.py"), "--end1", r1_file, "--outfile_e1", r1_out]
             if r2_file is None:
                 r2_out = None
             else:
@@ -155,7 +165,7 @@ def process(infiles, opts):
         print "Expected barcodes: " + ", ".join(barcodes)
         for (r1_file, i_file, r2_file) in chaste_files:
             (out_prefix_r1, out_extn) = os.path.splitext(r1_file)
-            cmd = ["python", "demux.py", "--seqs", opts.barcodefile, "--end1", r1_file, "--index", i_file]
+            cmd = ["python", os.path.join(scriptpath, "demux.py"), "--seqs", opts.barcodefile, "--end1", r1_file, "--index", i_file]
             if r2_file:
                 cmd.extend(["end2", r2_file])
             common.run_cmd(cmd)
@@ -171,7 +181,7 @@ def process(infiles, opts):
         for (r1_ch_file, ind_ch_file, r2_ch_file) in chaste_files:
             parts = os.path.splitext(ind_ch_file)
             outfile = parts[0] + common.HASH_EXTENSION
-            common.run_cmd(["python", "hash_index_reads.py", "--infile", ind_ch_file, "--outfile", outfile, "--tn_end_length", str(len(opts.tn_end_seq))])
+            common.run_cmd(["python", os.path.join(scriptpath, "hash_index_reads.py"), "--infile", ind_ch_file, "--outfile", outfile, "--tn_end_length", str(len(opts.tn_end_seq))])
             hash_logs.append((r1_ch_file, ind_ch_file, r2_ch_file, outfile))
 
     # Filter first-end reads if passed hash
@@ -182,7 +192,7 @@ def process(infiles, opts):
             if index_ok:
                 print "Index sequences are primarily " + opts.tn_end_seq + " (" + str(ratio * 100) + "%)"
                 outfile1 = common.add_suffix(r1_ch_file, common.TNEND_SUFFIX)
-                cmd = ["python", "tnend_filter.py", "--end1", r1_ch_file, "--index", ind_ch_file, "--outfile1", outfile1, "--tn_end", opts.tn_end_seq]
+                cmd = ["python", os.path.join(scriptpath, "tnend_filter.py"), "--end1", r1_ch_file, "--index", ind_ch_file, "--outfile1", outfile1, "--tn_end", opts.tn_end_seq]
                 if r2_file:
                     outfile2 = common.add_suffix(r2_ch_file, common.TNEND_SUFFIX)
                     cmd.extend(["--end2", r2_ch_file, "--outfile2", outfile2])
@@ -201,7 +211,7 @@ def process(infiles, opts):
         trimmed_files = list()
         for (r1_file, i_file, r2_file) in filtered_files:
             outfile = common.add_suffix(r1_file, common.TRIM_SUFFIX)
-            common.run_cmd(["python", "r1_filter.py", "--end1", r1_file, "--outfile", outfile, "--seq", opts.tn_end_seq])
+            common.run_cmd(["python", os.path.join(scriptpath, "r1_filter.py"), "--end1", r1_file, "--outfile", outfile, "--seq", opts.tn_end_seq])
             trimmed_files.append((outfile, None, None))
     else:
         trimmed_files = filtered_files
@@ -212,7 +222,7 @@ def process(infiles, opts):
         barcodes = read_barcodes(opts.barcodefile)
         for (r1_file, i_file, r2_file) in trimmed_files:
             (out_prefix_r1, out_extn) = os.path.splitext(r1_file)
-            cmd = ["python", "demux.py", "--seqs", opts.barcodefile, "--end1", r1_file, "--end2", r2_file]
+            cmd = ["python", os.path.join(scriptpath, "demux.py"), "--seqs", opts.barcodefile, "--end1", r1_file, "--end2", r2_file]
             if i_file:
                 cmd.extend(["--index", i_file])
                 (out_prefix_i, _) = os.path.splitext(i_file)
@@ -261,7 +271,7 @@ def process(infiles, opts):
     for sam_file in sam_files:
         parts = os.path.splitext(sam_file)
         outfile = parts[0] + common.SUM_EXTENSION
-        common.run_cmd(["python", "summarize_mappings.py", "--infile", sam_file, "--outfile", outfile])
+        common.run_cmd(["python", os.path.join(scriptpath, "summarize_mappings.py"), "--infile", sam_file, "--outfile", outfile])
         sum_files.append(outfile)
 
     # Merge slipped reads
@@ -269,7 +279,7 @@ def process(infiles, opts):
     for sum_file in sum_files:
         outfile = common.add_suffix(sum_file, common.MERGE_SUFFIX)
         if opts.merge_slipped:
-            common.run_cmd(["python", "merge_slipped.py", "--infile", sum_file, "--outfile", outfile])
+            common.run_cmd(["python", os.path.join(scriptpath, "merge_slipped.py"), "--infile", sum_file, "--outfile", outfile])
             sum_mg_files.append(outfile)
         else:
             sum_mg_files.append(sum_file)
@@ -283,9 +293,9 @@ def process(infiles, opts):
             parts = os.path.splitext(mg_file)
             norm_file = parts[0] + common.NORM_SUFFIX + parts[1]
             if opts.norm_factor is None:
-                common.run_cmd(["python", "norm.py", "--infile", mg_file, "--outfile", norm_file])
+                common.run_cmd(["python", os.path.join(scriptpath, "norm.py"), "--infile", mg_file, "--outfile", norm_file])
             else:
-                common.run_cmd(["python", "norm.py", "--infile", mg_file, "--outfile", norm_file, "--norm-factor", str(opts.norm_factor)])
+                common.run_cmd(["python", os.path.join(scriptpath, "norm.py"), "--infile", mg_file, "--outfile", norm_file, "--norm-factor", str(opts.norm_factor)])
                 norm_files.append(norm_file)
         else:
             norm_files.append(mg_file)
@@ -304,6 +314,11 @@ def main():
     if len(args) == 0:
         print "Please supply input fastq files (must be in pairs/triplets if using index reads and/or 2nd-end reads)"
         exit(1)
+    infiles = args
+    for infile in infiles:
+        if not os.path.isfile(infile):
+            print "Input fastq " + infile + " not found"
+            exit(1)
     if (opts.demux_i or opts.demux_r2) and opts.barcodefile is None:
         print "Please supply a file of expected barcodes for de-multiplexing using the -d or -e options"
         exit(1)
@@ -320,7 +335,8 @@ def main():
         print "Please supply a file of expected barcodes for de-multiplexing using the -d or -e options"
         exit(1)
 
-    infiles = args
+    if not headers_ok(opts.reference_fa):
+        print "WARNING: fasta headers are complex and may not be parsed correctly. We recommend simple headers: '>accession_of_genomic_element'"
 
     process(infiles, opts)
 

@@ -88,6 +88,7 @@ def print_counts(outfile, poscounts, zerocounts):
         count = 0
         sortedkeys = sorted(poscounts.keys(), key=lambda x: x[2], reverse=True)
         sortedkeys.sort(key=lambda x: int(x[1]))
+        sortedkeys.sort(key=lambda x: x[0])
         for (replicon, pos, strand) in sortedkeys:
             totalreads = poscounts[(replicon, pos, strand)]
             q0reads = zerocounts.get((replicon, pos, strand), 0)

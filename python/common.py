@@ -8,6 +8,7 @@
 #------------------------------------------------------------------------------
 import os.path
 import subprocess
+import re
 
 #------------------------------------------------------------------------------
 # constants
@@ -16,7 +17,6 @@ IDX_RATIO = .5
 BWA = "/usr/bin/bwa"
 BWA_SEED_DIFF = 2
 BWA_PCT_MISSING = .035
-TN_END_LENGTH = 6
 BOWTIE = "/usr/bin/bowtie"
 BOWTIE_BUILD = "/usr/bin/bowtie-build"
 ALN_EXTENSION = ".sai"
@@ -30,6 +30,7 @@ MERGE_SUFFIX = "_mg"
 NORM_SUFFIX = "_norm"
 NORM_FACTOR = 10000000
 WORKING_DIR = "work"
+SCRIPTS_PATH = "."
 
 ALL_SUFFIX = "_all"
 Q0_SUFFIX = "_q0"
@@ -65,3 +66,41 @@ def run_cmd_file_out(cmd, stdout_fh):
         badcmd = " ".join(e.cmd)
         print "Error running command: " + badcmd
         exit(1)
+
+# Replicon names are in the fasta headers - read fasta and return a list of names
+def read_replicon_names(fasta):
+    replicons = dict()
+    repl_num = 0
+    with open(fasta, "r") as fh:
+        for line in fh:
+            if line.startswith(">"):
+                repl_long = line[1:-1]
+                repl = repl_long.split(" ", 1)[0]
+                replicons[repl_num] = repl
+                repl_num += 1
+    return replicons
+
+# Read annotation data from one or more .ptt files and return a hash
+def read_annotations(annofile_list, replicon_list):
+    annotations = dict()
+    count = 0
+    for filenum, annofile in enumerate(annofile_list):
+        replicon = replicon_list[filenum]
+        annotations[replicon] = dict()
+        with open(annofile, "r") as fh:
+            for line in fh:
+                mobj = re.match("^(\d+)\.\.(\d+)", line)
+                if mobj:
+                    startpos = mobj.group(1)
+                    endpos = mobj.group(2)
+                    (loc, strand, length, pid, gene, synonym, code, cog, product) = line.rstrip().split('\t')
+                    annotations[replicon][pid] = dict();
+                    annotations[replicon][pid]['locus_tag'] = synonym
+                    annotations[replicon][pid]['startpos'] = int(startpos)
+                    annotations[replicon][pid]['endpos'] = int(endpos)
+                    annotations[replicon][pid]['strand'] = strand
+                    annotations[replicon][pid]['length'] = length
+                    annotations[replicon][pid]['info'] = '\t'.join([gene, code, cog, product])
+                    count += 1
+    print "read " + str(count) + " annotations for " + str(len(annotations.keys())) + " replicon(s)"
+    return annotations
