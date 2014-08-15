@@ -334,6 +334,14 @@ def main():
     if (opts.demux_i or opts.demux_r2) and opts.barcodefile is None:
         print "Please supply a file of expected barcodes for de-multiplexing using the -d or -e options"
         exit(1)
+    if opts.use_bowtie:
+        if not os.path.isfile(common.BOWTIE):
+            print "Path to Bowtie (" + common.BOWTIE + ") is incorrect or Bowtie is not installed"
+            exit(1)
+    else:
+        if not os.path.isfile(common.BWA):
+            print "Path to BWA (" + common.BWA + ") is incorrect or BWA is not installed"
+            exit(1)
 
     if not headers_ok(opts.reference_fa):
         print "WARNING: fasta headers are complex and may not be parsed correctly. We recommend simple headers: '>accession_of_genomic_element'"
